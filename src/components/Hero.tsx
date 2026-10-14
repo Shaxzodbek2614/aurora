@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 
 const socials = [
@@ -16,9 +17,41 @@ const socials = [
 ]
 
 export default function Hero() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // React doesn't render the `muted` attribute, which Safari needs for autoplay,
+  // and Low Power Mode blocks autoplay entirely — so force muted playback and
+  // retry when the tab becomes visible or on the first user interaction.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    video.muted = true
+    video.defaultMuted = true
+    video.setAttribute('muted', '')
+    video.setAttribute('playsinline', '')
+
+    const tryPlay = () => {
+      if (video.paused) video.play().catch(() => {})
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tryPlay()
+    }
+    const interactions = ['pointerdown', 'touchstart', 'keydown', 'scroll'] as const
+
+    tryPlay()
+    video.addEventListener('canplay', tryPlay)
+    document.addEventListener('visibilitychange', onVisible)
+    interactions.forEach((e) => window.addEventListener(e, tryPlay, { passive: true }))
+    return () => {
+      video.removeEventListener('canplay', tryPlay)
+      document.removeEventListener('visibilitychange', onVisible)
+      interactions.forEach((e) => window.removeEventListener(e, tryPlay))
+    }
+  }, [])
+
   return (
     <section style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
-      <video style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} src={`${import.meta.env.BASE_URL}hero.mp4`} autoPlay muted loop playsInline />
+      <video ref={videoRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} src={`${import.meta.env.BASE_URL}hero.mp4`} autoPlay muted loop playsInline preload="auto" />
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.10)' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.13) 0%, transparent 22%, transparent 60%, rgba(0,0,0,0.19) 100%)' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.07) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.07) 100%)' }} />
