@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 const socials = [
@@ -18,6 +18,17 @@ const socials = [
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [soundOn, setSoundOn] = useState(false)
+
+  // Browsers only allow autoplay when muted, so sound has to be turned on by a click.
+  const toggleSound = () => {
+    const video = videoRef.current
+    if (!video) return
+    const next = !soundOn
+    video.muted = !next
+    if (next) video.play().catch(() => {})
+    setSoundOn(next)
+  }
 
   // React doesn't render the `muted` attribute, which Safari needs for autoplay,
   // and Low Power Mode blocks autoplay entirely — so force muted playback and
@@ -122,6 +133,31 @@ export default function Hero() {
           </a>
         ))}
       </div>
+
+      <motion.button
+        type="button"
+        onClick={toggleSound}
+        aria-label={soundOn ? 'Mute sound' : 'Unmute sound'}
+        aria-pressed={soundOn}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.93 }}
+        style={{ position: 'absolute', bottom: '34px', right: '64px', zIndex: 10, width: '44px', height: '44px', borderRadius: '999px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', color: '#fff', cursor: 'pointer' }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 5 6 9H2v6h4l5 4V5z" fill="currentColor" />
+          {soundOn ? (
+            <>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            </>
+          ) : (
+            <>
+              <path d="m22 9-6 6" />
+              <path d="m16 9 6 6" />
+            </>
+          )}
+        </svg>
+      </motion.button>
     </section>
   )
 }
